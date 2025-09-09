@@ -23,6 +23,8 @@
 
 # apply-patch.bat - 代码补丁脚本
 
+为Qt源码按模块应用OpenHarmony适配补丁，支持单/批量进行补丁应用。
+
 ```mermaid
 graph TD
     A[开始] --> B{参数解析}
@@ -59,6 +61,8 @@ graph TD
    apply-patch.bat -r "C:\Qt\src" -p "common.patch" -m qtdeclarative
 
 # build-qt-ohos.bat - 交叉编译脚本
+
+自动获取SDK与Qt源码，并应用Qt For OpenHarmony代码补丁，编译并打包OpenHarmony版Qt。
 
 ```mermaid
 flowchart LR
