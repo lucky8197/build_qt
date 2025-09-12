@@ -99,7 +99,7 @@ set "os_type=windows"
 set "os_arch=unknown"
 
 :: Detect architecture
-if "%PROCESSOR_ARCHITECTURE%"=="x86" set "os_arch=x86"
+if "%PROCESSOR_ARCHITECTURE%"=="x86" set "os_arch=x64"
 if "%PROCESSOR_ARCHITECTURE%"=="AMD64" set "os_arch=x64"
 if "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "os_arch=arm64"
 
@@ -959,8 +959,8 @@ call :LOG_INFO "[步骤2]编译Qt源码..."
 
 call :CHECK_ENV %ERROR%
 
-set "BUILD_DIR=%ROOT_DIR%\build_Qt_%OHOS_ARCH%_api%OHOS_API%"
-set "QT_INSTALL_DIR=%ROOT_DIR%\Qt_%OHOS_ARCH%_api%OHOS_API%_bin"
+set "BUILD_DIR=%ROOT_DIR%\build_Qt_%OHOS_ARCH%_api!OHOS_API!"
+set "QT_INSTALL_DIR=%ROOT_DIR%\Qt_%OHOS_ARCH%_api!OHOS_API!_bin"
 
 call :LOG_INFO "编译目录:%BUILD_DIR%"
 call :LOG_INFO "安装目录:%QT_INSTALL_DIR%"
@@ -982,9 +982,14 @@ call "%QT_DIR%\configure.bat" ^
 
 :: Compile and log
 
-call :LOG_INFO "正在编译Qt..."
 
-mingw32-make -j16 
+for /f "tokens=2 delims==" %%A in ('wmic cpu get NumberOfLogicalProcessors /value ^| find "NumberOfLogicalProcessors"') do (
+    set "threads=%%A"
+)
+
+call :LOG_INFO "正在编译Qt, 使用逻辑线程数:%threads%..."
+
+mingw32-make -j%threads%
 if %errorlevel% neq 0 (
     call :LOG_ERROR "Qt编译失败"
 	
@@ -994,7 +999,7 @@ if %errorlevel% neq 0 (
 	echo.
 )
 
-mingw32-make install %ERROR%
+REM mingw32-make install %ERROR%
 popd
 
 :: Copy the runtime dependencies
@@ -1088,9 +1093,9 @@ dir /a /b "%ROOT_DIR%\ohos-sdk" 2>nul | findstr . >nul
 if %errorlevel% neq 0 (
     call :LOG_INFO "%ROOT_DIR%\ohos-sdk 文件夹为空,开始下载OpenHarmony SDK"
 	
-	call :INSTALL_COMPONENT native:%OHOS_API% %ERROR%
+	call :INSTALL_COMPONENT native:!OHOS_API! %ERROR%
 ) else (
-	set "OHOS_SDK_PATH=%ROOT_DIR%\ohos-sdk\%OHOS_API%"
+	set "OHOS_SDK_PATH=%ROOT_DIR%\ohos-sdk\!OHOS_API!"
 	set "LLVM_INSTALL_DIR=%OHOS_SDK_PATH%\native\llvm"
 	set "PATH=!PATH!;%LLVM_INSTALL_DIR%\bin"
     call :LOG_INFO "%ROOT_DIR%\ohos-sdk 文件夹不为空,跳过下载OpenHarmony SDK"

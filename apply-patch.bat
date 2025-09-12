@@ -105,6 +105,10 @@ for %%F in ("%patch_path%") do (
     )
 )
 
+:: 拷贝ohextras模块
+
+xcopy %patch_path%\qtohextras  %repo_path%\qtohextras /E /I /Y /Q
+
 exit /b !MODULE_FAILED!
 
 :: 添加结果汇总函数
