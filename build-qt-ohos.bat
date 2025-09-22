@@ -16,7 +16,7 @@ setlocal enabledelayedexpansion
 :: 默认的工作根目录
 set "OHOS_API=18"
 set "ROOT_DIR=%cd%\Work"
-set "QT_GIT_URL=https://github.com/qt/qt5.git"
+set "QT_GIT_URL=https://gitcode.com/qtforohos/qt5.git"
 set "QT_GIT_PATCH_URL=https://gitcode.com/openharmony-sig/qt.git"
 set "BASE_URL_OHOS=https://repo.harmonyos.com/sdkmanager/v5/ohos/getSdkList"
 REM set "TARGET_SDK=https://cidownload.openharmony.cn/version/Master_Version/OpenHarmony_5.1.0.101/20250327_020249/version-Master_Version-OpenHarmony_5.1.0.101-20250327_020249-ohos-sdk-full_5.1.0-Release.tar.gz"
