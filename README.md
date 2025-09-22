@@ -1,7 +1,7 @@
 # 编译环境准备
 
 - **基础工具**：
-  - [Git (≥2.30)](https://git-scm.com/downloads/win)
+  - [Git (≥2.30)](https://git-scm.com/downloads)
   - [Perl (≥5.12)](http://www.activestate.com/activeperl/)
   - [Python (≥2.7)](http://www.activestate.com/activepython/)
   - MinGW-w64 (gcc ≥4.9)
