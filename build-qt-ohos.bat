@@ -999,7 +999,7 @@ if %errorlevel% neq 0 (
 	echo.
 )
 
-REM mingw32-make install %ERROR%
+mingw32-make install %ERROR%
 popd
 
 :: Copy the runtime dependencies
