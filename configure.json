@@ -1,0 +1,79 @@
+{
+    "repositories": {
+        "qt_repo":{
+            "url": "https://github.com/qt/qt5.git"
+        },
+        "qt-ohos-patch": {
+            "url": "https://gitcode.com/openharmony-sig/qt.git"
+        }
+    },
+    "dependencies": {
+        "perl":{
+            "url": "https://gitcode.com/Li-Yaosong/prebuilt/releases/download/1.0.0/perl5.7z",
+            "sha256": "8E70ABE1987AC577C733B5913C0904F66E2E0A3A268B9F8994FADC42F89DACAE"
+        },
+        "mingw":{
+            "url": "https://gitcode.com/Li-Yaosong/prebuilt/releases/download/1.0.0/mingw64-x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z",
+            "sha256": "38E77201ED72301F4D3FDDE72AE1273538ACD12580E116CB82B9195C366B45B8"
+        },
+        "ohos_sdk":{
+            "url": "https://repo.harmonyos.com/sdkmanager/v5/ohos/getSdkList",
+            "support_version": "6.0-ohos-single-2"
+        }
+    },
+    "supported-qt-tags": [
+        "v5.15.12-lts-lgpl",
+        "v5.15.16-lts-lgpl",
+        "v6.5.6-lts-lgpl"
+    ],
+    "config": {
+        "working-directory": "${pwd}/work",
+        "perl": "${pwd}/work/perl/bin",
+        "mingw": "${pwd}/work/mingw/mingw64/bin",
+        "ohos_sdk": "${pwd}/work/ohos-sdk/${ohos_version}",
+        "ohos_version": 15,
+        "build_type": "release",
+        "build_ohos_abi": "arm64-v8a",
+        "build_qt_tag": "v5.15.12-lts-lgpl",
+        "clone_depth": 1
+    },
+    "qt-config": {
+        "license": "opensource",
+        "confirm-license": true,
+        "-platform": "win32-g++",
+        "-xplatform": "oh-clang",
+        "-opengl": "es2",
+        "-opengles3": true,
+        "-no-dbus": true,
+        "-disable-rpath": true,
+        "-nomake": ["tests", "examples"]
+    },
+    "v5.15.12-lts-lgpl": {
+        "-skip": [
+            "qtpim", 
+            "qtvirtualkeyboard", 
+            "qtwebengine", 
+            "qtsystems", 
+            "qtlocation", 
+            "qtgamepad", 
+            "qtscript", 
+            "qtwebview"
+        ]
+    },
+    "v6.5.6-lts-lgpl": {
+        "-skip": [
+            "qtpim", 
+            "qtconnectivity",
+            "qtvirtualkeyboard", 
+            "qtwebengine", 
+            "qtsystems", 
+            "qtlocation", 
+            "qtwebchannel",
+            "qtgamepad", 
+            "qtscript", 
+            "qtsensors",
+            "qtconnectivity",
+            "qtwebview"
+        ]
+    }
+}
