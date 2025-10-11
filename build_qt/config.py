@@ -9,22 +9,24 @@ from build_qt.utils import detect_platform, download_component, extract_archive
 from build_qt.ohos_sdk_downloader import OhosSdkDownloader
 
 class Config:
+    config = None
+    user_config = None
     def __init__(self, config_path: str):
         self.root_path = os.path.abspath(os.path.dirname(config_path))
 
         with open(config_path, 'r', encoding='utf-8') as f:
             self.config = json.load(f)
 
+        plat = detect_platform()
+        self.ohos_sdk_downloader = OhosSdkDownloader(os_type=plat['osType'], os_arch=plat['osArch'], support_version=self.ohos_support_version())
         self.init_user_config()
         user_config_path = os.path.join(self.root_path, 'configure.json.user')
         with open(user_config_path, 'r', encoding='utf-8') as f:
             self.user_config = json.load(f)
-
         self.perl_path = self.get_perl_path()
         self.mingw_path = self.get_mingw_path()
         self.ohos_sdk_path = self.get_ohos_sdk_path()
-        plat = detect_platform()
-        self.ohos_sdk_downloader = OhosSdkDownloader(os_type=plat['osType'], os_arch=plat['osArch'], support_version=self.ohos_support_version())
+
 
     def init_user_config(self):
         user_config_path = os.path.join(self.root_path, 'configure.json.user')
@@ -41,19 +43,19 @@ class Config:
                     "type": "path",
                     "name": "perl",
                     "message": "请配置perl路径（默认则自动下载）：",
-                    "default": self.perl_path()
+                    "default": self.get_perl_path()
                 },
                 {
                     "type": "path",
                     "name": "mingw",
                     "message": "请配置mingw路径（默认则自动下载）：",
-                    "default": self.mingw_path()
+                    "default": self.get_mingw_path()
                 },
                 {
                     "type": "path",
                     "name": "ohos_sdk",
                     "message": "请配置OpenHarmony SDK路径（默认则自动下载）：",
-                    "default": self.ohos_sdk_path()
+                    "default": self.get_ohos_sdk_path()
                 },
                 {
                     "type": "select",
@@ -107,8 +109,8 @@ class Config:
                 else:
                     print("mingw32-make 执行失败")
         else:
-            print("当前系统不是 Windows，跳过环境变量设置和命令检查。")
-            return
+            need_perl = False
+            need_mingw = False
         if self.ohos_sdk_path and os.path.isdir(self.ohos_sdk_path):
             # 检查 native\oh-uni-package.json 是否存在
             package_json_path = os.path.join(self.ohos_sdk_path, 'native', 'oh-uni-package.json')
@@ -126,7 +128,7 @@ class Config:
                 except Exception as e:
                     print("警告: 无法解析 {}，文件可能损坏或格式不正确。错误: {}".format(package_json_path, e))
         temp_dir = os.path.join(self.get_working_dir(), '.temp')
-        if need_perl:
+        if need_perl and system == "Windows":
             perl_url = self.config["dependencies"]["perl"]["url"]
             perl_checksum = ('sha256', self.config["dependencies"]["perl"]["sha256"])
             print("正在下载并安装 Perl...")
@@ -136,7 +138,7 @@ class Config:
             if os.path.isdir(perl_extracted_path):
                 self.perl_path = os.path.join(perl_extracted_path, 'bin')
 
-        if need_mingw:
+        if need_mingw and system == "Windows":
             mingw_url = self.config["dependencies"]["mingw"]["url"]
             mingw_checksum = ('sha256', self.config["dependencies"]["mingw"]["sha256"])
             print("正在下载并安装 MinGW...")
@@ -163,7 +165,10 @@ class Config:
         return working_dir
     
     def get_perl_path(self):
-        _perl_path = perl_path = self.user_config.get("config", self.config.get("config")).get("perl", self.config["config"]["perl"])
+        if self.user_config is None:
+            _perl_path = self.config["config"]["perl"]
+        else:
+            _perl_path = perl_path = self.user_config.get("config", self.config.get("config")).get("perl", self.config["config"]["perl"])
         if "${pwd}" in _perl_path:
             _perl_path = _perl_path.replace("${pwd}", self.root_path)
         _perl_path = os.path.abspath(os.path.expanduser(_perl_path))
@@ -246,6 +251,6 @@ class Config:
         result += ["-prefix", os.path.join(self.get_working_dir(), 'output', self.tag())]
         result += ["-{}".format(self.build_type())]
         result += ["-device-option", "OHOS_ARCH={}".format(self.build_ohos_abi())]
-        result += ["-make-tool", "mingw32-make -j{}".format(32) if platform.system() == "Windows" else "make -j{}".format(32)]
+        result += ["-make-tool", "mingw32-make -j{}".format(8) if platform.system() == "Windows" else "make -j{}".format(8)]
         result += ["-verbose"]
         return result

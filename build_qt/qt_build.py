@@ -29,13 +29,18 @@ class QtBuild:
             print(result.stdout)
         else:
             print("perl 执行失败")
-
-        result = subprocess.run([self.make_tools, "--version"], capture_output=True, text=True)
-        if result.returncode == 0:
-            print("当前系统是 {}，版本信息：".format(self.make_tools))
-            print(result.stdout)
-        else:
-            print("{} 执行失败".format(self.make_tools))
+        try:
+            result = subprocess.run([self.make_tools, "--version"], capture_output=True, text=False)
+            if result.returncode == 0:
+                print("当前系统是 {}，版本信息：".format(self.make_tools))
+                print(result.stdout)
+            else:
+                print("{} 执行失败".format(self.make_tools))
+        except Exception as e:
+            print("❌ 执行 {} 出错：{}".format(self.make_tools, e))
+            if self.system is not "Windows":
+                print("请执行 sudo apt-get update && sudo apt-get install build-essential 安装编译make工具")
+            exit(1)
         if not os.path.exists(self.build_dir):
             os.makedirs(self.build_dir)
     

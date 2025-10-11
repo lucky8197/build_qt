@@ -66,7 +66,7 @@ def download_component(url: str, dest_path: str, expected_checksum: Optional[tup
             if expected_checksum:
                 # 校验已存在文件的 sha256
                 if checksum(dest_path, expected_checksum=expected_checksum):
-                    print("Info: existing file {} checksum matched".format(dest_path))
+                    print("Info: 文件 {} 已存在存在，校验和匹配".format(dest_path))
                     return dest_path  # 已存在且校验通过，直接返回
                 else:
                     print("Warning: existing file {} checksum mismatch, re-downloading".format(dest_path))
@@ -141,10 +141,8 @@ def extract_archive(archive_path: str, dest_dir: str, overwrite: bool = True) ->
     import os
     import shutil
     import stat
-    import zipfile
     import tarfile
     import py7zr
-    from rich.progress import Progress, TextColumn, BarColumn, DownloadColumn, TransferSpeedColumn, TimeRemainingColumn
 
     def on_rm_error(func, path, exc_info):
         """处理只读文件的删除"""
@@ -155,7 +153,7 @@ def extract_archive(archive_path: str, dest_dir: str, overwrite: bool = True) ->
             pass
 
     if not os.path.exists(archive_path):
-        raise DownloadError("Archive not found: {}".format(archive_path))
+        raise DownloadError("未找到存档: {}".format(archive_path))
 
     if not overwrite and os.path.exists(dest_dir) and os.listdir(dest_dir):
         print("Info: destination directory {} already exists and is not empty, skipping extraction".format(dest_dir))
@@ -165,74 +163,25 @@ def extract_archive(archive_path: str, dest_dir: str, overwrite: bool = True) ->
             shutil.rmtree(dest_dir, onerror=on_rm_error)
     os.makedirs(dest_dir, exist_ok=True)
 
-    total_size = None
-    try:
-        rich_progress = Progress(
-            TextColumn("{task.fields[filename]}", justify="right"),
-            BarColumn(),
-            DownloadColumn(),
-            TransferSpeedColumn(),
-            TimeRemainingColumn()
-        )
-        rich_progress.__enter__()
-        task_id = rich_progress.add_task("extract_archive", filename=os.path.basename(archive_path), total=total_size or 0)
-    except Exception:
-        rich_progress = None
-        task_id = None
-
     lower = archive_path.lower()
     if lower.endswith('.zip'):
-        with zipfile.ZipFile(archive_path, 'r') as z:
-            members = z.infolist()
-            if rich_progress and task_id is not None:
-                try:
-                    total_size = sum(m.file_size for m in members)
-                    rich_progress.update(task_id, total=total_size)
-                except Exception:
-                    pass
-            for m in members:
-                z.extract(m, dest_dir)
-                if rich_progress and task_id is not None:
-                    try:
-                        rich_progress.update(task_id, advance=m.file_size)
-                    except Exception:
-                        pass
+        from .ziptools import extractzipfile
+        extractzipfile(archive_path, dest_dir, permissions=True)
+        print(f"解压完成: {archive_path} -> {dest_dir}")
 
     elif lower.endswith('.tar') or lower.endswith('.tar.gz') or lower.endswith('.tgz'):
         mode = 'r:gz' if (lower.endswith('.tar.gz') or lower.endswith('.tgz')) else 'r'
         with tarfile.open(archive_path, mode) as t:
             members = t.getmembers()
-            if rich_progress and task_id is not None:
-                try:
-                    total_size = sum(m.size for m in members)
-                    rich_progress.update(task_id, total=total_size)
-                except Exception:
-                    pass
             for m in members:
                 t.extract(m, dest_dir)
-                if rich_progress and task_id is not None:
-                    try:
-                        rich_progress.update(task_id, advance=m.size)
-                    except Exception:
-                        pass
 
     elif lower.endswith('.7z'):
         with py7zr.SevenZipFile(archive_path, mode='r') as z:
             all_info = z.getnames()
-            if rich_progress and task_id is not None:
-                try:
-                    rich_progress.update(task_id, total=0)
-                except Exception:
-                    pass
             z.extractall(path=dest_dir)
-            if rich_progress and task_id is not None:
-                try:
-                    rich_progress.update(task_id, advance=len(all_info))
-                except Exception:
-                    pass
     else:
         raise DownloadError("Unsupported archive format: {}".format(archive_path))
-    rich_progress.__exit__(None, None, None)
 
     return dest_dir
 

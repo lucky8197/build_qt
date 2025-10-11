@@ -143,7 +143,7 @@ class OhosSdkDownloader:
             raise DownloadError("No download URL found in archive")
         file_name = os.path.basename(url.split("?")[0])
         dest_path = os.path.join(dest_dir, file_name)
-        
+        print(url)
         saved_path = download_component(url=url, dest_path=dest_path, expected_checksum=checksum)
         return saved_path
 
