@@ -56,17 +56,20 @@ if __name__ == '__main__':
                 qtBuild.configure(config.build_configure_options())
             except Exception as e:
                 print('Error during configuration:', e)
+                exit(1)
         # 构建
         if args.exe_stage == 'build' or args.exe_stage == 'all':
             try:
                 qtBuild.build(config.build_jobs())
             except Exception as e:
                 print('Error during build:', e)
+                exit(1)
         # 安装
         if args.exe_stage == 'install' or args.exe_stage == 'all':
             try:
                 qtBuild.install()
             except Exception as e:
                 print('Error during install:', e)
+                exit(1)
     exit()
 

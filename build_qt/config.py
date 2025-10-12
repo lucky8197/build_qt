@@ -115,8 +115,8 @@ class Config:
         need_perl = True
         need_mingw = True
         need_ohos_sdk = True
-        os.environ["PATH"] = "C:\\Windows\\System32" + os.pathsep + "C:\\Windows"
         if self.system == "Windows":
+            os.environ["PATH"] = "C:\\Windows\\System32" + os.pathsep + "C:\\Windows"
             cmd = None
             if self.perl_path and os.path.isdir(self.perl_path):
                 cmd = [os.path.join(self.perl_path, "perl"), "-v"]
