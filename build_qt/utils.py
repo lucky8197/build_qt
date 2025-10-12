@@ -82,14 +82,14 @@ def download_component(url: str, dest_path: str, expected_checksum: Optional[tup
                 # try to get total size from headers
                 try:
                     total_size = int(r.headers.get('Content-Length')) if r.headers.get('Content-Length') else None
-                except Exception:
+                except (ValueError, TypeError):
                     total_size = None
                 task_id = None
                 try:
                     rich_progress = Progress(TextColumn("{task.fields[filename]}", justify="right"), BarColumn(), DownloadColumn(), TransferSpeedColumn(), TimeRemainingColumn())
                     rich_progress.__enter__()
                     task_id = rich_progress.add_task("download", filename=os.path.basename(dest_path), total=total_size or 0)
-                except Exception:
+                except (ImportError, TypeError):
                     rich_progress = None
 
                 try:
@@ -102,13 +102,13 @@ def download_component(url: str, dest_path: str, expected_checksum: Optional[tup
                                 if rich_progress and task_id is not None:
                                     try:
                                         rich_progress.update(task_id, advance=len(chunk))
-                                    except Exception:
+                                    except (KeyError, AttributeError):
                                         pass
                 finally:
                     if rich_progress:
                         try:
                             rich_progress.__exit__(None, None, None)
-                        except Exception:
+                        except AttributeError:
                             pass
                 # move to final location
                 shutil.move(tmp_path, dest_path)
@@ -121,14 +121,14 @@ def download_component(url: str, dest_path: str, expected_checksum: Optional[tup
             if os.path.exists(tmp_path):
                 try:
                     os.remove(tmp_path)
-                except Exception:
+                except (FileNotFoundError, PermissionError):
                     pass
             raise DownloadError("Failed to download {}: {}".format(url, e))
         except Exception:
             if os.path.exists(tmp_path):
                 try:
                     os.remove(tmp_path)
-                except Exception:
+                except (FileNotFoundError, PermissionError):
                     pass
             raise
 
@@ -149,7 +149,8 @@ def extract_archive(archive_path: str, dest_dir: str, overwrite: bool = True) ->
         try:
             os.chmod(path, stat.S_IWRITE)
             func(path)
-        except Exception:
+        except (PermissionError, FileNotFoundError):
+            print("Warning: unable to extract {} to {},{}".format(archive_path, dest_dir, exc_info))
             pass
 
     if not os.path.exists(archive_path):
@@ -166,8 +167,8 @@ def extract_archive(archive_path: str, dest_dir: str, overwrite: bool = True) ->
     lower = archive_path.lower()
     if lower.endswith('.zip'):
         from .ziptools import extractzipfile
-        extractzipfile(archive_path, dest_dir, permissions=True)
-        print(f"解压完成: {archive_path} -> {dest_dir}")
+        extractzipfile(archive_path, dest_dir, trace=None, permissions=True)
+        print("解压完成: {} -> {}".format(archive_path, dest_dir))
 
     elif lower.endswith('.tar') or lower.endswith('.tar.gz') or lower.endswith('.tgz'):
         mode = 'r:gz' if (lower.endswith('.tar.gz') or lower.endswith('.tgz')) else 'r'
@@ -178,7 +179,6 @@ def extract_archive(archive_path: str, dest_dir: str, overwrite: bool = True) ->
 
     elif lower.endswith('.7z'):
         with py7zr.SevenZipFile(archive_path, mode='r') as z:
-            all_info = z.getnames()
             z.extractall(path=dest_dir)
     else:
         raise DownloadError("Unsupported archive format: {}".format(archive_path))

@@ -115,7 +115,7 @@ class OhosSdkDownloader:
             if url:
                 try:
                     size_int = int(size) if size is not None else None
-                except Exception:
+                except (ValueError, TypeError):
                     size_int = None
                 result[path] = ComponentArchive(url=url, size=size_int, checksum=checksum, os_arch=os_arch)
         return result
