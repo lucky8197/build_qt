@@ -1,11 +1,13 @@
 import os
+import sys
+import io
 import argparse
 from build_qt.qt_repo import QtRepo, QtRepoError
 from build_qt.qt_build import QtBuild
 from build_qt.config import Config
 
 if __name__ == '__main__':
-
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     parser = argparse.ArgumentParser(description='Build Qt for OHOS')
     parser.add_argument('--init', action='store_true', help='初始化Qt仓库,并应用补丁')
     parser.add_argument('--env_check', action='store_true', help='检查开发环境')
