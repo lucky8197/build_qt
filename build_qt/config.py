@@ -2,6 +2,7 @@
 import json
 import questionary
 import os
+import sys
 from typing import Dict
 import platform
 import subprocess
@@ -20,7 +21,8 @@ class Config:
         self.make_tools = "mingw32-make" if self.system == "Windows" else "make"
         plat = detect_platform()
         self.ohos_sdk_downloader = OhosSdkDownloader(os_type=plat['osType'], os_arch=plat['osArch'], support_version=self.ohos_support_version())
-        self.init_user_config()
+        if sys.stdout.isatty():
+            self.init_user_config()
         user_config_path = os.path.join(self.root_path, 'configure.json.user')
         with open(user_config_path, 'r', encoding='utf-8') as f:
             self.user_config = json.load(f)
@@ -103,7 +105,7 @@ class Config:
             ])
             print("用户配置：", answers)
             if answers == {}:
-                questionary.print("用户取消操作，程序退出。", style="bold fg:ansired")
+                print("用户取消操作，程序退出。")
                 exit()   # 手动退出
             else:
                 self.save_usr_config(answers)
@@ -120,41 +122,42 @@ class Config:
                 try:
                     result = subprocess.run(cmd, capture_output=True, text=True)
                     if result.returncode == 0:
-                        questionary.print("perl 版本信息", style="bold fg:ansigreen")
+                        print("perl 版本信息")
                         print(result.stdout)
                         os.environ["PATH"] = os.environ.get("PATH", "") + os.pathsep + self.perl_path
                         need_perl = False
                 except Exception as e:
-                    questionary.print("执行 {} 失败：{}".format(cmd, e), style="bold fg:ansired")
+                    print("执行 {} 失败：{}".format(cmd, e))
             if self.mingw_path and os.path.isdir(self.mingw_path):
                 cmd = [os.path.join(self.mingw_path, self.make_tools), "--version"]
                 try:
                     result = subprocess.run(cmd, capture_output=True, text=True)
                     if result.returncode == 0:
-                        questionary.print("{} 版本信息".format(self.make_tools), style="bold fg:ansigreen")
+                        print("{} 版本信息".format(self.make_tools))
                         print(result.stdout)
                         os.environ["PATH"] = os.environ.get("PATH", "") + os.pathsep + self.mingw_path
                         need_mingw = False
                 except Exception as e:
-                    questionary.print("执行 {} 失败：{}".format(cmd, e), style="bold fg:ansired")
+                    print("执行 {} 失败：{}".format(cmd, e))
         else:
             cmd = None
             try:
                 cmd = ["perl", "-v"]
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 if result.returncode == 0:
-                    questionary.print("perl 版本信息", style="bold fg:ansigreen")
+                    print("perl 版本信息")
                     print(result.stdout)
                 cmd = [self.make_tools, "--version"]
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 if result.returncode == 0:
-                    questionary.print("{} 版本信息".format(self.make_tools), style="bold fg:ansigreen")
+                    print("{} 版本信息".format(self.make_tools))
                     print(result.stdout)
             except Exception as e:
-                questionary.print("执行 {} 失败：{}".format(cmd, e), style="bold fg:ansired")
-                if system == "Linux":
+                print("执行 {} 失败：{}".format(cmd, e))
+
+                if self.system == "Linux":
                     print("请执行 sudo apt-get update && sudo apt-get install build-essential 以安装编译工具")
-                if system == "Darwin":
+                if self.system == "Darwin":
                     print("请从 App Store 安装最新的 Xcode 以安装编译工具")
                 exit(1)
         if self.ohos_sdk_path and os.path.isdir(self.ohos_sdk_path):
@@ -166,7 +169,7 @@ class Config:
                     import json
                     with open(package_json_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
-                    questionary.print("OHOS SDK 版本信息", style="bold fg:ansigreen")
+                    print("OHOS SDK 版本信息")
                     print("OHOS SDK 路径：", package_json_path)
                     print(json.dumps(data, indent=2))
                     os.environ["OHOS_SDK_PATH"] = self.ohos_sdk_path
