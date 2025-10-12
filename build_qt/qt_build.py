@@ -3,44 +3,16 @@ import os
 import subprocess
 
 class QtBuild:
-    def __init__(self, source_dir: str, perl_path: str, make_path: str, ohos_sdk: str):
+    def __init__(self, source_dir: str):
         self.source_dir = source_dir
         self.build_dir = os.path.join(self.source_dir, 'build')
         self.system = platform.system()
         self.make_tools = "mingw32-make" if self.system == "Windows" else "make"
+        self.rmdir_cmd = ["rmdir", "/S", "/Q"] if self.system == "Windows" else ["rm", "-rf"]
+        self.rmdir_cmd += self.build_dir
         self.supported_systems = ["Windows", "Linux", "Darwin"]
         if self.system not in self.supported_systems:
             raise EnvironmentError("Unsupported system: {}".format(self.system))
-        if self.system == "Windows":
-            os.environ["PATH"] = os.environ.get("PATH", "") + os.pathsep + perl_path
-            os.environ["PATH"] = os.environ.get("PATH", "") + os.pathsep + make_path
-            print("当前系统是 Windows")
-        elif self.system == "Linux":
-            print("当前系统是 Linux")
-        elif self.system == "Darwin":
-            print("当前系统是 macOS")
-        else:
-            print("当前系统是 {}，可能不受支持".format(self.system))
-            return
-        os.environ["OHOS_SDK_PATH"] = ohos_sdk
-        result = subprocess.run(["perl", "-v"], capture_output=True, text=True)
-        if result.returncode == 0:
-            print("perl 版本信息：")
-            print(result.stdout)
-        else:
-            print("perl 执行失败")
-        try:
-            result = subprocess.run([self.make_tools, "--version"], capture_output=True, text=False)
-            if result.returncode == 0:
-                print("当前系统是 {}，版本信息：".format(self.make_tools))
-                print(result.stdout)
-            else:
-                print("{} 执行失败".format(self.make_tools))
-        except Exception as e:
-            print("❌ 执行 {} 出错：{}".format(self.make_tools, e))
-            if self.system != "Windows":
-                print("请执行 sudo apt-get update && sudo apt-get install build-essential 安装编译make工具")
-            exit(1)
         if not os.path.exists(self.build_dir):
             os.makedirs(self.build_dir)
     
@@ -75,7 +47,7 @@ class QtBuild:
     def clean(self):
         if os.path.exists(self.build_dir):
             print("正在删除构建目录: {}".format(self.build_dir))
-            result = subprocess.run(["rm", "-rf", self.build_dir] if self.system != "Windows" else ["rmdir", "/S", "/Q", self.build_dir], check=True)
+            result = subprocess.run(self.rmdir_cmd, check=True)
             if result.returncode == 0:
                 print("构建目录已删除")
             else:
