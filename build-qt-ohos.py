@@ -1,42 +1,70 @@
 import os
+import argparse
 from build_qt.qt_repo import QtRepo, QtRepoError
 from build_qt.qt_build import QtBuild
 from build_qt.config import Config
 
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser(description='Build Qt for OHOS')
+    parser.add_argument('--init', action='store_true', help='初始化Qt仓库,并应用补丁')
+    parser.add_argument('--env_check', action='store_true', help='检查开发环境')
+    parser.add_argument('--reset_repo', action='store_true', help='重置Qt仓库,并重新应用补丁')
+    build_stages = ['configure', 'build', 'install', 'clean', 'all']
+    parser.add_argument('--exe_stage', type=str, choices=build_stages, help='执行指定阶段')
+    args = parser.parse_args()
+    if not any(vars(args).values()):
+        parser.print_help()
+        exit(0)
     config = Config(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'configure.json'))
-    # 开发环境检查
-    config.dev_env_check()
-
     qt_dir = os.path.join(config.get_working_dir(), 'qt5')
 
-    depth = 1
     repo = QtRepo(qt_dir)
-    try:
-        # Qt源码克隆，url: {config.qt_repo()}, 深度为 {depth}, 分支/标签为 {config.tag()}
-        repo.clone(config.qt_repo(), depth=depth, branch=config.tag())
+    if args.init:
+        try:
+            # Qt源码克隆，url: {config.qt_repo()}, 深度为 {depth}, 分支/标签为 {config.tag()}
+            repo.clone(config.qt_repo(), depth=config.clone_depth(), branch=config.tag())
 
-        # Qt OHOS补丁仓库克隆，url: {config.qt_ohos_patch_repo()}, 深度为 {depth}
-        repo.clone_patch_repo(config.qt_ohos_patch_repo(), depth=depth)
+            # Qt OHOS补丁仓库克隆，url: {config.qt_ohos_patch_repo()}, 深度为 {depth}
+            repo.clone_patch_repo(config.qt_ohos_patch_repo(), depth=0)
 
-        # 应用补丁
-        repo.apply_patches()
-    except QtRepoError as e:
-        print('QtRepoError:', e)
-        exit(1)
-    except Exception as e:
-        print('Error:', e)
-        exit(1)
+            # 应用补丁
+            repo.apply_patches()
+        except QtRepoError as e:
+            print('QtRepoError:', e)
+            exit(1)
+        except Exception as e:
+            print('Error:', e)
+            exit(1)
+        exit()
 
-    # Qt编译
-    qtBuild = QtBuild(qt_dir, config.get_perl_path(), config.get_mingw_path(), config.get_ohos_sdk_path())
-    try:
+    if args.exe_stage is not None or args.env_check:
+        # 开发环境检查
+        config.dev_env_check()
+        if args.env_check:
+            exit()
+        # Qt编译
+        qtBuild = QtBuild(qt_dir)
         # 配置
-        qtBuild.configure(config.build_configure_options())
+        if args.exe_stage == 'clean':
+            qtBuild.clean()
+            exit()
+        if args.exe_stage == 'configure' or args.exe_stage == 'all':
+            try:
+                qtBuild.configure(config.build_configure_options())
+            except Exception as e:
+                print('Error during configuration:', e)
         # 构建
-        qtBuild.build(jobs=32)
+        if args.exe_stage == 'build' or args.exe_stage == 'all':
+            try:
+                qtBuild.build(config.build_jobs())
+            except Exception as e:
+                print('Error during build:', e)
         # 安装
-        qtBuild.install()
-    except Exception as e:
-        print('Error during configuration:', e)
+        if args.exe_stage == 'install' or args.exe_stage == 'all':
+            try:
+                qtBuild.install()
+            except Exception as e:
+                print('Error during install:', e)
+    exit()
+
