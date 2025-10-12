@@ -14,7 +14,7 @@
         },
         "mingw":{
             "url": "https://gitcode.com/Li-Yaosong/prebuilt/releases/download/1.0.0/mingw64-x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z",
-            "sha256": "38E77201ED72301F4D3FDDE72AE1273538ACD12580E116CB82B9195C366B45B8"
+            "sha256": "412A340FD3767CDBAEC7423F9ADCE01DADF6F6B05B1241D7F39224940D803CF8"
         },
         "ohos_sdk":{
             "url": "https://repo.harmonyos.com/sdkmanager/v5/ohos/getSdkList",
@@ -23,19 +23,20 @@
     },
     "supported-qt-tags": [
         "v5.15.12-lts-lgpl",
-        "v5.15.16-lts-lgpl",
         "v6.5.6-lts-lgpl"
     ],
     "config": {
         "working-directory": "${pwd}/work",
         "perl": "${pwd}/work/perl/bin",
-        "mingw": "${pwd}/work/mingw/mingw64/bin",
+        "mingw": "${pwd}/work/mingw/bin",
         "ohos_sdk": "${pwd}/work/ohos-sdk/${ohos_version}",
         "ohos_version": 15,
         "build_type": "release",
         "build_ohos_abi": "arm64-v8a",
         "build_qt_tag": "v5.15.12-lts-lgpl",
-        "clone_depth": 1
+        "clone_depth": 1,
+        "jobs": 4,
+        "verbose": false
     },
     "qt-config": {
         "license": "opensource",
