@@ -1,0 +1,8 @@
+# created by virtualenv automatically
+.venv/
+work/
+.idea/
+.vscode/
+build_qt/__pycache__/
+build_qt/ziptools/__pycache__/
+configure.json.user
