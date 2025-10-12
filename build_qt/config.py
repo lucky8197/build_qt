@@ -115,6 +115,7 @@ class Config:
         need_perl = True
         need_mingw = True
         need_ohos_sdk = True
+        os.environ["PATH"] = "C:\\Windows\\System32" + os.pathsep + "C:\\Windows"
         if self.system == "Windows":
             cmd = None
             if self.perl_path and os.path.isdir(self.perl_path):
@@ -147,11 +148,13 @@ class Config:
                 if result.returncode == 0:
                     print("perl 版本信息")
                     print(result.stdout)
+                    need_perl = False
                 cmd = [self.make_tools, "--version"]
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 if result.returncode == 0:
                     print("{} 版本信息".format(self.make_tools))
                     print(result.stdout)
+                    need_mingw = False
             except Exception as e:
                 print("执行 {} 失败：{}".format(cmd, e))
 
