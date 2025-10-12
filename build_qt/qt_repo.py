@@ -52,7 +52,7 @@ class QtRepo:
         """
         if os.path.exists(self.repo_path) and os.listdir(self.repo_path):
             print('目录已存在: {}, 跳过克隆'.format(self.repo_path))
-            self.patch_repo = Repo(self.repo_path)
+            self.repo = Repo(self.repo_path)
             return 
 
         git_exe = shutil.which('git')
@@ -105,10 +105,19 @@ class QtRepo:
 
         patch_dir: 补丁文件所在目录，默认使用补丁仓库根目录
         """
+
         if not self.repo:
-            raise QtRepoError('主仓库未初始化')
+            if os.path.isdir(os.path.join(self.repo_path, '.git')):
+                self.repo = Repo(self.repo_path)
+            else:
+                raise QtRepoError('主仓库未初始化')
+
         if not self.patch_repo:
-            raise QtRepoError('补丁仓库未初始化')
+            if os.path.isdir(os.path.join(self.repo_path + '_patch', '.git')):
+                self.patch_repo = Repo(self.repo_path + '_patch')
+            else:
+                raise QtRepoError('补丁仓库未初始化')
+
         self.reset_hard()
         patch_dir = patch_dir or self.patch_repo.working_tree_dir
         patch_dir = os.path.join(patch_dir, "patch", "v5.15.12")
