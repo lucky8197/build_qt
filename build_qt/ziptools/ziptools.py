@@ -540,7 +540,8 @@ def extractzipfile(zipname,               # pathname of zipfile to extract from
                    trace=print,           # trace router (or lambda *p, **k: None)
                    permissions=False,     # propagate saved permisssions? [1.1]
                    nomangle=False):       # don't mod bad filename chars to '_' on errors?
-        
+    if trace is None:
+        trace = lambda *args, **kwargs: None
     trace('Unzipping from', zipname, 'to', pathto)
     dirmodtimes = []
     stats = ExtractStats()
