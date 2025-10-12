@@ -16,7 +16,8 @@ class Config:
 
         with open(config_path, 'r', encoding='utf-8') as f:
             self.config = json.load(f)
-
+        self.system = platform.system()
+        self.make_tools = "mingw32-make" if self.system == "Windows" else "make"
         plat = detect_platform()
         self.ohos_sdk_downloader = OhosSdkDownloader(os_type=plat['osType'], os_arch=plat['osArch'], support_version=self.ohos_support_version())
         self.init_user_config()
@@ -31,25 +32,27 @@ class Config:
     def init_user_config(self):
         user_config_path = os.path.join(self.root_path, 'configure.json.user')
         if not os.path.isfile(user_config_path):
-            questionary.print("用户配置文件 {} 不存在，开始配置。".format(user_config_path), style="bold italic fg:darkred")
+            questionary.print("用户配置文件 {} 不存在，开始配置。".format(user_config_path), style="bold fg:ansiyellow")
             answers = questionary.prompt([
                 {
-                    "type": "path",          # 提示类型（输入、选择、确认等）
-                    "name": "working-directory",      # 存储结果的键名
-                    "message": "请输入工作目录：",  # 显示给用户的提示信息
-                    "default": self.get_working_dir(),    # 默认值
+                    "type": "path",
+                    "name": "working-directory",
+                    "message": "请输入工作目录：",
+                    "default": self.get_working_dir(),
                 },
                 {
                     "type": "path",
                     "name": "perl",
                     "message": "请配置perl路径（默认则自动下载）：",
-                    "default": self.get_perl_path()
+                    "default": self.get_perl_path(),
+                    "when": platform.system() != "Windows"
                 },
                 {
                     "type": "path",
                     "name": "mingw",
                     "message": "请配置mingw路径（默认则自动下载）：",
-                    "default": self.get_mingw_path()
+                    "default": self.get_mingw_path(),
+                    "when": platform.system() != "Windows"
                 },
                 {
                     "type": "path",
@@ -68,81 +71,126 @@ class Config:
                     "type": "select",
                     "name": "build_qt_tag",
                     "message": "请选择要编译的 Qt 版本：",
-                    "choices": [
-                        "v5.15.12-lts-lgpl",
-                        "v5.15.16-lts-lgpl",
-                        "v6.5.6-lts-lgpl"
-                    ],
+                    "choices": self.supported_qt_tags(),
                     "default": self.tag()
+                },
+                {
+                    "type": "select",
+                    "name": "build_type",
+                    "message": "请选择构建类型（Release/Debug）：",
+                    "choices": ["release", "debug"],
+                    "default": self.build_type()
+                },
+                {
+                    "type": "select",
+                    "name": "build_ohos_abi",
+                    "message": "请选择OpenHarmony目标架构：",
+                    "choices": ["arm64-v8a", "armeabi-v7a", "x86_64"],
+                    "default": self.build_ohos_abi()
+                },
+                {
+                    "type": "text",
+                    "name": "clone_depth",
+                    "message": "请输入克隆深度（建议值1，0为完整克隆）：",
+                    "default": str(self.clone_depth()),
+                },
+                {
+                    "type": "text",
+                    "name": "jobs",
+                    "message": "请输入编译并行任务数（建议值为CPU核心数）：",
+                    "default": str(self.build_jobs()),
                 }
             ])
             print("用户配置：", answers)
             if answers == {}:
-                print("🛑 用户取消操作，程序退出。")
+                questionary.print("用户取消操作，程序退出。", style="bold fg:ansired")
                 exit()   # 手动退出
             else:
                 self.save_usr_config(answers)
                 print("用户配置已保存到 {}".format(user_config_path))
 
     def dev_env_check(self):
-        system = platform.system()
         need_perl = True
         need_mingw = True
         need_ohos_sdk = True
-        if system == "Windows":
+        if self.system == "Windows":
+            cmd = None
             if self.perl_path and os.path.isdir(self.perl_path):
-                result = subprocess.run([os.path.join(self.perl_path, "perl"), "-v"], capture_output=True, text=True)
-                if result.returncode == 0:
-                    print("perl 版本信息：")
-                    print(result.stdout)
-                    os.environ["PATH"] = os.environ.get("PATH", "") + os.pathsep + self.perl_path
-                    need_perl = False
-                else:
-                    print("perl 执行失败")
+                cmd = [os.path.join(self.perl_path, "perl"), "-v"]
+                try:
+                    result = subprocess.run(cmd, capture_output=True, text=True)
+                    if result.returncode == 0:
+                        questionary.print("perl 版本信息", style="bold fg:ansigreen")
+                        print(result.stdout)
+                        os.environ["PATH"] = os.environ.get("PATH", "") + os.pathsep + self.perl_path
+                        need_perl = False
+                except Exception as e:
+                    questionary.print("执行 {} 失败：{}".format(cmd, e), style="bold fg:ansired")
             if self.mingw_path and os.path.isdir(self.mingw_path):
-                result = subprocess.run([os.path.join(self.mingw_path, "mingw32-make"), "--version"], capture_output=True, text=True)
-                if result.returncode == 0:
-                    print("mingw32-make 版本信息：")
-                    print(result.stdout)
-                    os.environ["PATH"] = os.environ.get("PATH", "") + os.pathsep + self.mingw_path
-                    need_mingw = False
-                else:
-                    print("mingw32-make 执行失败")
+                cmd = [os.path.join(self.mingw_path, self.make_tools), "--version"]
+                try:
+                    result = subprocess.run(cmd, capture_output=True, text=True)
+                    if result.returncode == 0:
+                        questionary.print("{} 版本信息".format(self.make_tools), style="bold fg:ansigreen")
+                        print(result.stdout)
+                        os.environ["PATH"] = os.environ.get("PATH", "") + os.pathsep + self.mingw_path
+                        need_mingw = False
+                except Exception as e:
+                    questionary.print("执行 {} 失败：{}".format(cmd, e), style="bold fg:ansired")
         else:
-            need_perl = False
-            need_mingw = False
+            cmd = None
+            try:
+                cmd = ["perl", "-v"]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if result.returncode == 0:
+                    questionary.print("perl 版本信息", style="bold fg:ansigreen")
+                    print(result.stdout)
+                cmd = [self.make_tools, "--version"]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if result.returncode == 0:
+                    questionary.print("{} 版本信息".format(self.make_tools), style="bold fg:ansigreen")
+                    print(result.stdout)
+            except Exception as e:
+                questionary.print("执行 {} 失败：{}".format(cmd, e), style="bold fg:ansired")
+                if system == "Linux":
+                    print("请执行 sudo apt-get update && sudo apt-get install build-essential 以安装编译工具")
+                if system == "Darwin":
+                    print("请从 App Store 安装最新的 Xcode 以安装编译工具")
+                exit(1)
         if self.ohos_sdk_path and os.path.isdir(self.ohos_sdk_path):
             # 检查 native\oh-uni-package.json 是否存在
             package_json_path = os.path.join(self.ohos_sdk_path, 'native', 'oh-uni-package.json')
-            print("OHOS SDK 路径：", package_json_path)
             if os.path.isfile(package_json_path):
                 # 尝试读取 JSON 文件，检查是否能正确解析
                 try:
                     import json
                     with open(package_json_path, 'r', encoding='utf-8') as f:
                         data = json.load(f)
-                    print("OHOS SDK 配置内容：")
+                    questionary.print("OHOS SDK 版本信息", style="bold fg:ansigreen")
+                    print("OHOS SDK 路径：", package_json_path)
                     print(json.dumps(data, indent=2))
                     os.environ["OHOS_SDK_PATH"] = self.ohos_sdk_path
                     need_ohos_sdk = False
                 except Exception as e:
                     print("警告: 无法解析 {}，文件可能损坏或格式不正确。错误: {}".format(package_json_path, e))
         temp_dir = os.path.join(self.get_working_dir(), '.temp')
-        if need_perl and system == "Windows":
-            perl_url = self.config["dependencies"]["perl"]["url"]
-            perl_checksum = ('sha256', self.config["dependencies"]["perl"]["sha256"])
+        if need_perl and self.system == "Windows":
+            perl_url = self.get_depends().get("perl").get("url")
+            perl_checksum = ('sha256', self.get_depends().get("perl").get("sha256"))
+            download_path = os.path.join(temp_dir, 'perl5.7z')
             print("正在下载并安装 Perl...")
-            zip_path = download_component(perl_url, os.path.join(temp_dir, 'perl5.7z'), perl_checksum)
+            zip_path = download_component(perl_url, download_path, perl_checksum)
             perl_extracted_path = os.path.join(self.get_working_dir(), 'perl')
             extract_archive(zip_path, perl_extracted_path)
             if os.path.isdir(perl_extracted_path):
                 self.perl_path = os.path.join(perl_extracted_path, 'bin')
 
-        if need_mingw and system == "Windows":
-            mingw_url = self.config["dependencies"]["mingw"]["url"]
-            mingw_checksum = ('sha256', self.config["dependencies"]["mingw"]["sha256"])
+        if need_mingw and self.system == "Windows":
+            mingw_url = self.get_depends().get("mingw").get("url")
+            mingw_checksum = ('sha256', self.get_depends().get("mingw").get("sha256"))
+            download_path = os.path.join(temp_dir, 'mingw64-x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z')
             print("正在下载并安装 MinGW...")
-            zip_path = download_component(mingw_url, os.path.join(temp_dir, 'mingw64-x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z'), mingw_checksum)
+            zip_path = download_component(mingw_url, download_path, mingw_checksum)
             mingw_extracted_path = os.path.join(self.get_working_dir(), 'mingw')
             extract_archive(zip_path, mingw_extracted_path)
             if os.path.isdir(mingw_extracted_path):
@@ -151,38 +199,37 @@ class Config:
         if need_ohos_sdk:
             api_version = self.ohos_version()
             print("正在下载并安装 OpenHarmony SDK...")
-            saved = self.ohos_sdk_downloader.download_component_by_name(api_version=api_version, component_name='native', dest_dir=temp_dir)
+            saved = self.ohos_sdk_downloader.download_component_by_name(api_version=api_version,
+                                                                        component_name='native',
+                                                                        dest_dir=temp_dir)
             extract_archive(saved, self.ohos_sdk_path)
 
         if need_perl or need_mingw or need_ohos_sdk:
             self.dev_env_check()
 
     def get_working_dir(self):
-        working_dir = self.config["config"]["working-directory"]
+        working_dir = self.get_config_value("working-directory")
         if "${pwd}" in working_dir:
             working_dir = working_dir.replace("${pwd}", self.root_path)
         working_dir = os.path.abspath(os.path.expanduser(working_dir))
         return working_dir
     
     def get_perl_path(self):
-        if self.user_config is None:
-            _perl_path = self.config["config"]["perl"]
-        else:
-            _perl_path = perl_path = self.user_config.get("config", self.config.get("config")).get("perl", self.config["config"]["perl"])
+        _perl_path = self.get_config_value("perl")
         if "${pwd}" in _perl_path:
             _perl_path = _perl_path.replace("${pwd}", self.root_path)
         _perl_path = os.path.abspath(os.path.expanduser(_perl_path))
         return _perl_path
 
     def get_mingw_path(self):
-        _mingw_path = self.config["config"]["mingw"]
+        _mingw_path = self.get_config_value("mingw")
         if "${pwd}" in _mingw_path:
             _mingw_path = _mingw_path.replace("${pwd}", self.root_path)
         _mingw_path = os.path.abspath(os.path.expanduser(_mingw_path))
         return _mingw_path
     
     def get_ohos_sdk_path(self):
-        _ohos_sdk_path = self.config["config"]["ohos_sdk"]
+        _ohos_sdk_path = self.get_config_value("ohos_sdk")
         if "${pwd}" in _ohos_sdk_path:
             _ohos_sdk_path = _ohos_sdk_path.replace("${pwd}", self.root_path)
         if "${ohos_version}" in _ohos_sdk_path:
@@ -191,29 +238,55 @@ class Config:
         return _ohos_sdk_path
 
     def ohos_support_version(self):
-        return self.config["dependencies"]["ohos_sdk"]["support_version"]
-    
+        return self.get_depends().get("ohos_sdk").get("support_version")
+
+    def supported_qt_tags(self):
+        return self.config.get("supported-qt-tags")
+
     def ohos_version(self):
-        return self.config["config"]["ohos_version"]
+        return self.get_config_value("ohos_version")
     
     def qt_repo(self):
-        return self.config["repositories"]["qt_repo"]["url"]
+        return self.get_repos().get("qt_repo").get("url")
 
     def qt_ohos_patch_repo(self):
-        return self.config["repositories"]["qt-ohos-patch"]["url"]
+        return self.get_repos().get("qt-ohos-patch").get("url")
     
     def tag(self):
-        return self.config["config"]["build_qt_tag"]
+        return self.get_config_value("build_qt_tag")
 
     def build_type(self):
-        return self.config["config"]["build_type"]
+        return self.get_config_value("build_type")
 
     def build_ohos_abi(self):
-        return self.config["config"]["build_ohos_abi"]
+        return self.get_config_value("build_ohos_abi")
+
+    def clone_depth(self):
+        return int(self.get_config_value("clone_depth"))
+
+    def build_jobs(self):
+        jobs = int(self.get_config_value("jobs"))
+        if jobs <= os.cpu_count():
+            return jobs
+        return os.cpu_count()
+
+    def get_repos(self):
+        return self.config.get("repositories", {})
+
+    def get_depends(self):
+        return self.config.get("dependencies", {})
 
     def get_config(self):
-        return self.config
-    
+        return self.config.get("config")
+
+    def get_user_config(self):
+        if self.user_config is None:
+            return self.get_config()
+        return self.user_config.get("config", self.get_config())
+
+    def get_config_value(self, key):
+        return self.get_user_config().get(key, self.get_config().get(key))
+
     def save_usr_config(self, usr_config: Dict):
         usr_config_path = os.path.join(self.root_path, 'configure.json.user')
         obj = {
@@ -251,6 +324,7 @@ class Config:
         result += ["-prefix", os.path.join(self.get_working_dir(), 'output', self.tag())]
         result += ["-{}".format(self.build_type())]
         result += ["-device-option", "OHOS_ARCH={}".format(self.build_ohos_abi())]
-        result += ["-make-tool", "mingw32-make -j{}".format(8) if platform.system() == "Windows" else "make -j{}".format(8)]
-        result += ["-verbose"]
+        result += ["-make-tool", "{} -j{}".format(self.make_tools, self.build_jobs())]
+        if self.get_config_value("verbose"):
+            result += ["-verbose"]
         return result
