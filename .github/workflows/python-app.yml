@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  build-qt-ohos:
+  build:
     strategy:
       matrix:
         os: [ windows-2025, windows-2022, ubuntu-24.04, ubuntu-22.04, macos-26, macos-15, macos-14 ]
