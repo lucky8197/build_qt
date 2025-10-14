@@ -21,6 +21,7 @@ def init_parser():
     return _args
 
 if __name__ == '__main__':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     args = init_parser()
     config = Config(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'configure.json'))
     qt_dir = os.path.join(config.get_working_dir(), 'qt5')
