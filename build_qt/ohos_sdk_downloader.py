@@ -20,7 +20,7 @@ from .utils import download_component
 import requests
 
 
-SDK_LIST_URL = "https://repo.harmonyos.com/sdkmanager/v5/ohos/getSdkList"
+SDK_LIST_URL = 'https://repo.harmonyos.com/sdkmanager/v5/ohos/getSdkList'
 
 
 class DownloadError(Exception):
@@ -55,9 +55,9 @@ class OhosSdkDownloader:
 
     def build_request_body(self) -> Dict:
         return {
-            "osArch": self.os_arch,
-            "osType": self.os_type,
-            "supportVersion": self.support_version,
+            'osArch': self.os_arch,
+            'osType': self.os_type,
+            'supportVersion': self.support_version,
         }
 
     def get_sdk_list(self) -> List[Dict]:
@@ -72,12 +72,12 @@ class OhosSdkDownloader:
             resp.raise_for_status()
             data = resp.json()
             if not isinstance(data, list):
-                raise DownloadError("Unexpected response format: expected a list")
+                raise DownloadError('Unexpected response format: expected a list')
             return data
         except requests.RequestException as e:
-            raise DownloadError("Failed to fetch SDK list: {}".format(e))
+            raise DownloadError('Failed to fetch SDK list: {}'.format(e))
         except ValueError as e:
-            raise DownloadError("Failed to parse JSON: {}".format(e))
+            raise DownloadError('Failed to parse JSON: {}'.format(e))
 
     def get_supported_versions(self) -> List[str]:
         """获取支持的 apiVersion 列表。
@@ -88,7 +88,7 @@ class OhosSdkDownloader:
         sdk_list = self.get_sdk_list()
         versions = set()
         for entry in sdk_list:
-            sv = entry.get("apiVersion")
+            sv = entry.get('apiVersion')
             if sv:
                 versions.add(sv)
         return sorted(versions)
@@ -102,16 +102,16 @@ class OhosSdkDownloader:
         comp_set = set(components) if components is not None else None
         result = {}
         for entry in sdk_list:
-            path = entry.get("path")
+            path = entry.get('path')
             if not path:
                 continue
             if comp_set is not None and path not in comp_set:
                 continue
-            archive = entry.get("archive") or {}
-            url = archive.get("url")
-            size = archive.get("size")
-            checksum = archive.get("checksum")
-            os_arch = archive.get("osArch")
+            archive = entry.get('archive') or {}
+            url = archive.get('url')
+            size = archive.get('size')
+            checksum = archive.get('checksum')
+            os_arch = archive.get('osArch')
             if url:
                 try:
                     size_int = int(size) if size is not None else None
@@ -123,7 +123,7 @@ class OhosSdkDownloader:
     def download_component_by_name(self, api_version: str, component_name: str, dest_dir: str) -> str:
         """高层 API：请求 SDK 列表并下载指定 apiVersion 和组件名的组件。
 
-        - api_version: apiVersion 字符串（例如 "20"）用于匹配 entry["apiVersion"]
+        - api_version: apiVersion 字符串（例如 '20'）用于匹配 entry['apiVersion']
         - component_name: 组件名称，如 'native'、'js'、'ets'、'previewer'、'toolchains'
         - os_type/os_arch/support_version: 请求参数
         - dest_dir: 保存目录
@@ -132,16 +132,16 @@ class OhosSdkDownloader:
         """
         sdk_list = self.get_sdk_list()
         # filter by apiVersion then by path
-        matches = [e for e in sdk_list if str(e.get("apiVersion")) == str(api_version) and e.get("path") == component_name]
+        matches = [e for e in sdk_list if str(e.get('apiVersion')) == str(api_version) and e.get('path') == component_name]
         if not matches:
-            raise DownloadError("No matching component found for apiVersion={}, component={}".format(api_version, component_name))
+            raise DownloadError('No matching component found for apiVersion={}, component={}'.format(api_version, component_name))
         entry = matches[0]
-        archive = entry.get("archive") or {}
-        url = archive.get("url")
-        checksum = ('sha256', archive.get("checksum"))
+        archive = entry.get('archive') or {}
+        url = archive.get('url')
+        checksum = ('sha256', archive.get('checksum'))
         if not url:
-            raise DownloadError("No download URL found in archive")
-        file_name = os.path.basename(url.split("?")[0])
+            raise DownloadError('No download URL found in archive')
+        file_name = os.path.basename(url.split('?')[0])
         dest_path = os.path.join(dest_dir, file_name)
         print(url)
         saved_path = download_component(url=url, dest_path=dest_path, expected_checksum=checksum)

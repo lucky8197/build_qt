@@ -1,7 +1,7 @@
 {
     "repositories": {
         "qt_repo":{
-            "url": "https://github.com/qt/qt5.git"
+            "url": "https://gitcode.com/qtforohos/qt5.git"
         },
         "qt-ohos-patch": {
             "url": "https://gitcode.com/openharmony-sig/qt.git"
@@ -26,7 +26,7 @@
         "v6.5.6-lts-lgpl"
     ],
     "config": {
-        "working-directory": "${pwd}/work",
+        "working_dir": "${pwd}/work",
         "perl": "${pwd}/work/perl/bin",
         "mingw": "${pwd}/work/mingw/bin",
         "ohos_sdk": "${pwd}/work/ohos-sdk/${ohos_version}",

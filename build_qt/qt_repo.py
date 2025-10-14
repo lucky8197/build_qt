@@ -100,7 +100,7 @@ class QtRepo:
         except subprocess.CalledProcessError as e:
             raise QtRepoError('git clone 补丁仓库失败: {}'.format(e))
     
-    def apply_patches(self, patch_dir: Optional[str] = None) -> None:
+    def apply_patches(self, tag_dir: Optional[str] = None) -> None:
         """应用补丁仓库中的补丁文件到主仓库。
 
         patch_dir: 补丁文件所在目录，默认使用补丁仓库根目录
@@ -119,8 +119,11 @@ class QtRepo:
                 raise QtRepoError('补丁仓库未初始化')
 
         self.reset_hard()
-        patch_dir = patch_dir or self.patch_repo.working_tree_dir
-        patch_dir = os.path.join(patch_dir, "patch", "v5.15.12")
+        if tag_dir:
+            tag_dir = tag_dir.replace('-lts-lgpl', '')
+        else:
+            tag_dir = 'v5.15.12'  # 默认使用 v5.15.12 目录
+        patch_dir = os.path.join(self.patch_repo.working_tree_dir, 'patch', tag_dir)
         if not os.path.isdir(patch_dir):
             raise QtRepoError('补丁目录不存在: {}'.format(patch_dir))
 
@@ -130,7 +133,7 @@ class QtRepo:
 
         for patch_file in sorted(patch_files):
             patch_path = os.path.join(patch_dir, patch_file)
-            if patch_file == "root.patch":
+            if patch_file == 'root.patch':
                 self.repo.git.apply(patch_path)
             else:
                 try:
@@ -140,9 +143,9 @@ class QtRepo:
                 except GitCommandError as e:
                     raise QtRepoError('应用补丁 {} 失败: {}'.format(patch_file, e))
         # 拷贝patch目录下的qtohextras到qt源码根目录
-        qtohextras_dir = os.path.join(patch_dir, "qtohextras")
+        qtohextras_dir = os.path.join(patch_dir, 'qtohextras')
         if os.path.isdir(qtohextras_dir):
-            dest_dir = os.path.join(self.repo_path, "qtohextras")
+            dest_dir = os.path.join(self.repo_path, 'qtohextras')
             if os.path.exists(dest_dir):
                 shutil.rmtree(dest_dir)
             shutil.copytree(qtohextras_dir, dest_dir)
