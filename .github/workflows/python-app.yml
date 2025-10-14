@@ -29,9 +29,13 @@ jobs:
           pip install -r requirements.txt
       - name: build
         run: |
-          python ./build-qt-ohos.py
           python ./build-qt-ohos.py --init
-          python ./build-qt-ohos.py --exe_stage all
+          python ./build-qt-ohos.py --exe_stage all --with_pack
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output-${{ matrix.os }}
+          path: work/output/*.zip
 
   windows-2022-build:
 
@@ -49,9 +53,13 @@ jobs:
           pip install -r requirements.txt
       - name: build
         run: |
-          python ./build-qt-ohos.py
           python ./build-qt-ohos.py --init
-          python ./build-qt-ohos.py --exe_stage all
+          python ./build-qt-ohos.py --exe_stage all --with_pack
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output-${{ matrix.os }}
+          path: work/output/*.zip
 
   ubuntu-24-04-build:
 
@@ -69,9 +77,14 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: build
         run: |
-          python ./build-qt-ohos.py
           python ./build-qt-ohos.py --init
-          python ./build-qt-ohos.py --exe_stage all
+          python ./build-qt-ohos.py --exe_stage all --with_pack
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output-${{ matrix.os }}
+          path: work/output/*.tar.gz
+
   ubuntu-22-04-build:
 
     runs-on: ubuntu-22.04
@@ -88,9 +101,13 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: build
         run: |
-          python ./build-qt-ohos.py
           python ./build-qt-ohos.py --init
-          python ./build-qt-ohos.py --exe_stage all
+          python ./build-qt-ohos.py --exe_stage all --with_pack
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output-${{ matrix.os }}
+          path: work/output/*.tar.gz
 
   macOS-26-build:
 
@@ -108,9 +125,13 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: build
         run: |
-          python ./build-qt-ohos.py
           python ./build-qt-ohos.py --init
-          python ./build-qt-ohos.py --exe_stage all
+          python ./build-qt-ohos.py --exe_stage all --with_pack
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output-${{ matrix.os }}
+          path: work/output/*.tar.gz
 
   macOS-15-build:
 
@@ -128,9 +149,13 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: build
         run: |
-          python ./build-qt-ohos.py
           python ./build-qt-ohos.py --init
-          python ./build-qt-ohos.py --exe_stage all
+          python ./build-qt-ohos.py --exe_stage all --with_pack
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output-${{ matrix.os }}
+          path: work/output/*.tar.gz
 
   macOS-14-build:
 
@@ -148,10 +173,13 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: build
         run: |
-          python ./build-qt-ohos.py
           python ./build-qt-ohos.py --init
-          python ./build-qt-ohos.py --exe_stage all
-        
+          python ./build-qt-ohos.py --exe_stage all --with_pack
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output-${{ matrix.os }}
+          path: work/output/*.tar.gz
   
 
     
