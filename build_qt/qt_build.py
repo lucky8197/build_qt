@@ -3,6 +3,7 @@ import os
 import subprocess
 from .utils import create_archive
 from .config import Config
+import shutil
 
 class QtBuild:
     def __init__(self, source_dir: str, config: Config):
@@ -46,6 +47,15 @@ class QtBuild:
             print('安装成功')
         else:
             print('安装失败')
+        if self.system == 'Windows':
+            dll_deps = ['libstdc++-6.dll', 'libgcc_s_seh-1.dll', 'libwinpthread-1.dll']
+            for dll_dep in dll_deps:
+                src_dll = os.path.join(self.config.get_mingw_path(), dll_dep)
+                if os.path.exists(src_dll):
+                    shutil.copy(src_dll, os.path.join(self.config.build_prefix(), 'bin'))
+                    print('已复制依赖 DLL: {}'.format(dll_dep))
+                else:
+                    print('未找到依赖 DLL: {}'.format(dll_dep))
 
     def clean(self):
         if os.path.exists(self.build_dir):
