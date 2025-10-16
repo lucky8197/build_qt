@@ -1,0 +1,5 @@
+requests
+GitPython
+questionary
+rich
+py7zr
