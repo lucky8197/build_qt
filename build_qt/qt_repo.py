@@ -149,6 +149,9 @@ class QtRepo:
             if os.path.exists(dest_dir):
                 shutil.rmtree(dest_dir)
             shutil.copytree(qtohextras_dir, dest_dir)
+            qtohextras_git = os.path.join(dest_dir, '.git')
+            with open(qtohextras_git, "w") as f:
+                f.write('gitdir: ../.git/modules/qtohextras')
             print('拷贝 qtohextras 目录成功')
         print('所有补丁应用完成')
     # ---------- 远端/fetch/pull ----------
