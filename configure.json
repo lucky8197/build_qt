@@ -4,7 +4,7 @@
             "url": "https://gitcode.com/qtforohos/qt5.git"
         },
         "qt-ohos-patch": {
-            "url": "https://gitcode.com/openharmony-sig/qt.git"
+            "url": "https://gitcode.com/Lucky8197/qt.git"
         }
     },
     "dependencies": {
