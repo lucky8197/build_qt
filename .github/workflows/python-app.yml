@@ -39,3 +39,17 @@ jobs:
           path: |
             work/output/*.zip
             work/output/*.tar.gz
+
+      - name: DingTalk Notification
+        if: always()
+        uses: zcong1993/action-dingtalk@v1
+        with:
+          webhook: ${{ secrets.DINGTALK_WEBHOOK }}
+          secret: ${{ secrets.DINGTALK_SECRET }}
+          msg: |
+            【Qt OHOS 构建通知】
+            状态: ${{ job.status }}
+            平台: ${{ matrix.os }}
+            分支: ${{ github.ref }}
+            触发者: ${{ github.actor }}
+            查看详情: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
