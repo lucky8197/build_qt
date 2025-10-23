@@ -40,16 +40,41 @@ jobs:
             work/output/*.zip
             work/output/*.tar.gz
 
-      - name: DingTalk Notification
+      - name: Generate timestamp and sign for DingTalk
+        id: dingtalk_sign
         if: always()
-        uses: zcong1993/action-dingtalk@v1
+        run: |
+          import hashlib
+          import hmac
+          import base64
+          import time
+          secret = '${{ secrets.DINGTALK_SECRET }}'
+          timestamp = str(round(time.time() * 1000))
+          string_to_sign = f'{timestamp}\n{secret}'
+          hmac_code = hmac.new(
+              secret.encode('utf-8'),
+              string_to_sign.encode('utf-8'),
+              hashlib.sha256
+          ).digest()
+          sign = base64.b64encode(hmac_code).decode('utf-8')
+          print(f'timestamp={timestamp}')
+          print(f'sign={sign}')
+        shell: python3
+
+      - name: Send DingTalk Notification
+        if: always()
+        uses: fjogeleit/http-request-action@v1
         with:
-          webhook: ${{ secrets.DINGTALK_WEBHOOK }}
-          secret: ${{ secrets.DINGTALK_SECRET }}
-          msg: |
-            【Qt OHOS 构建通知】
-            状态: ${{ job.status }}
-            平台: ${{ matrix.os }}
-            分支: ${{ github.ref }}
-            触发者: ${{ github.actor }}
-            查看详情: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          url: ${{ secrets.DINGTALK_WEBHOOK }}
+          method: 'POST'
+          contentType: 'application/json'
+          body: |
+            {
+              "msgtype": "text",
+              "text": {
+                "content": "【Qt OHOS 构建通知】\n状态: ${{ job.status }}\n平台: ${{ matrix.os }}\n分支: ${{ github.ref }}\n触发者: ${{ github.actor }}\n详情: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              },
+              "timestamp": ${{ steps.dingtalk_sign.outputs.timestamp }},
+              "sign": "${{ steps.dingtalk_sign.outputs.sign }}"
+            }
+        continue-on-error: true
