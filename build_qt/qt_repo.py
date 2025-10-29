@@ -75,7 +75,7 @@ class QtRepo:
             raise QtRepoError('git clone 失败: {}'.format(e))
         print('Local branches: {}'.format(self.list_branches(local=True)))
 
-    def clone_patch_repo(self, url: str, depth: int = 0) -> None:
+    def clone_patch_repo(self, url: str, depth: int = 0, branch: Optional[str] = None) -> None:
         """克隆补丁仓库，位于主仓库同级目录的 repo_path + '_patch' 目录下。"""
         patch_path = self.repo_path + '_patch'
         if os.path.exists(patch_path) and os.listdir(patch_path):
@@ -90,6 +90,8 @@ class QtRepo:
         cmd = [git_exe, 'clone', '--single-branch']
         if depth and depth > 0:
             cmd += ['--depth', str(depth)]
+        if branch:
+            cmd += ['--branch', branch]
         cmd += [url, patch_path]
 
         try:

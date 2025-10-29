@@ -32,8 +32,8 @@ if __name__ == '__main__':
             # Qt源码克隆，url: {config.qt_repo()}, 深度为 {depth}, 分支/标签为 {config.tag()}
             repo.clone(config.qt_repo(), depth=config.clone_depth(), branch=config.tag())
 
-            # Qt OHOS补丁仓库克隆，url: {config.qt_ohos_patch_repo()}, 深度为 {depth}
-            repo.clone_patch_repo(config.qt_ohos_patch_repo(), depth=0)
+            # Qt OHOS补丁仓库克隆，url: {config.qt_ohos_patch_repo()}, 深度为 {depth, 分支/标签为 {config.ohqt_tag()}
+            repo.clone_patch_repo(config.qt_ohos_patch_repo(), depth=0, branch=config.ohqt_tag())
 
             # 应用补丁
             repo.apply_patches()
