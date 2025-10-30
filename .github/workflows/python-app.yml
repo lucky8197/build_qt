@@ -5,9 +5,9 @@ name: Build Qt OHOS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "dev-x86" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "dev-x86" ]
 
 permissions:
   contents: read
@@ -35,7 +35,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-output-${{ matrix.os }}
+          name: build-output-x86-${{ matrix.os }}
           path: |
             work/output/*.zip
             work/output/*.tar.gz
